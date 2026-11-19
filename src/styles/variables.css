@@ -1,0 +1,42 @@
+:root {
+  /* Vrisaa brand colors */
+  --color-avocado: #344c35;
+  --color-avocado-light: #879b65;
+  --color-olive: #b1b88a;
+
+  --color-cream: #f7f3e9;
+  --color-cream-dark: #e7e4d3;
+
+  --color-terracotta: #b9764b;
+  --color-espresso: #292b24;
+
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Backgrounds */
+  --bg-primary: var(--color-cream);
+  --bg-secondary: var(--color-avocado);
+
+  /* Text */
+  --text-primary: var(--color-espresso);
+  --text-secondary: #6d7065;
+  --text-light: var(--color-cream);
+
+  /* Typography */
+  --font-heading: "Playfair Display", Georgia, serif;
+  --font-body: "DM Sans", Arial, sans-serif;
+
+  /* Layout */
+  --container-width: 1400px;
+  --page-padding: 5%;
+
+  /* Spacing */
+  --section-spacing: 120px;
+
+  /* Borders */
+  --border-color: rgba(52, 76, 53, 0.18);
+  --border-radius: 12px;
+
+  /* Transitions */
+  --transition: 0.3s ease;
+}

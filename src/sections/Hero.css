@@ -1,0 +1,272 @@
+
+.hero {
+  min-height: calc(100vh - 90px);
+  background: var(--color-cream);
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 65px 0 100px;
+  overflow: hidden;
+}
+
+.hero-container {
+  width: min(90%, 1400px);
+  margin: auto;
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  align-items: center;
+  gap: 65px;
+}
+
+/* LEFT CONTENT */
+
+.hero-content {
+  padding: 20px 0;
+}
+
+.hero-eyebrow {
+  display: inline-block;
+  color: var(--color-avocado-light);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  margin-bottom: 28px;
+}
+
+.hero-content h1 {
+  font-family: var(--font-heading);
+  font-size: clamp(55px, 6vw, 88px);
+  line-height: 1.08;
+  font-weight: 500;
+  color: var(--color-espresso);
+  letter-spacing: -3px;
+}
+
+.hero-content h1 span {
+  color: var(--color-avocado);
+  font-style: italic;
+}
+
+.hero-description {
+  max-width: 440px;
+  margin-top: 28px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+/* BUTTONS */
+
+.hero-buttons {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-top: 38px;
+  flex-wrap: wrap;
+}
+
+.hero-btn-primary {
+  background: var(--color-avocado);
+  color: var(--color-cream);
+  padding: 17px 25px;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  transition: var(--transition);
+}
+
+.hero-btn-primary:hover {
+  background: var(--color-avocado-light);
+  transform: translateY(-3px);
+}
+
+.hero-btn-primary span {
+  margin-left: 12px;
+}
+
+.hero-btn-secondary {
+  color: var(--color-avocado);
+  font-size: 13px;
+  border-bottom: 1px solid var(--color-avocado);
+  padding-bottom: 6px;
+  transition: var(--transition);
+}
+
+.hero-btn-secondary:hover {
+  color: var(--color-terracotta);
+}
+
+/* BOTTOM NOTE */
+
+.hero-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 75px;
+  color: var(--color-avocado-light);
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  font-weight: 600;
+}
+
+.hero-note-line {
+  height: 1px;
+  width: 45px;
+  background: var(--color-avocado-light);
+}
+
+/* RIGHT IMAGE */
+
+.hero-visual {
+  position: relative;
+  padding: 15px 25px 35px 0;
+}
+
+.hero-image-wrapper {
+  position: relative;
+  height: 570px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 48% 48% 5px 5px;
+}
+
+.hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.8s ease;
+}
+
+.hero-image-wrapper:hover .hero-image {
+  transform: scale(1.04);
+}
+
+.hero-image-label {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: var(--color-cream);
+  color: var(--color-avocado);
+  padding: 12px 16px;
+  display: flex;
+  gap: 9px;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+}
+
+/* DECORATIVE STAMP */
+
+.hero-stamp {
+  position: absolute;
+  right: -10px;
+  bottom: 0;
+  width: 125px;
+  height: 125px;
+  border-radius: 50%;
+  background: var(--color-avocado);
+  color: var(--color-cream);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transform: rotate(12deg);
+  border: 5px solid var(--color-cream);
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+
+.hero-stamp strong {
+  font-family: var(--font-heading);
+  font-size: 27px;
+  letter-spacing: 1px;
+}
+
+/* BOTTOM BAR */
+
+.hero-bottom {
+  position: absolute;
+  bottom: 25px;
+  left: 5%;
+  right: 5%;
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-secondary);
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+
+/* TABLET */
+
+@media (max-width: 1000px) {
+  .hero-container {
+    gap: 35px;
+  }
+
+  .hero-image-wrapper {
+    height: 470px;
+  }
+
+  .hero-content h1 {
+    font-size: 58px;
+  }
+}
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+  .hero {
+    padding: 45px 0 85px;
+    min-height: auto;
+  }
+
+  .hero-container {
+    grid-template-columns: 1fr;
+    gap: 45px;
+  }
+
+  .hero-content h1 {
+    font-size: clamp(52px, 13vw, 72px);
+    letter-spacing: -2px;
+  }
+
+  .hero-description {
+    font-size: 14px;
+  }
+
+  .hero-note {
+    margin-top: 40px;
+  }
+
+  .hero-visual {
+    padding: 0 15px 25px 0;
+  }
+
+  .hero-image-wrapper {
+    height: 420px;
+    border-radius: 45% 45% 5px 5px;
+  }
+
+  .hero-stamp {
+    width: 100px;
+    height: 100px;
+    right: -5px;
+  }
+
+  .hero-stamp strong {
+    font-size: 21px;
+  }
+
+  .hero-bottom {
+    font-size: 8px;
+    bottom: 20px;
+  }
+}
+
+@media (max-width: 380px) {
+  .hero-image-wrapper {
+    height: 340px;
+  }
+
+  .hero-bottom {
+    letter-spacing: 1px;
+  }
+}

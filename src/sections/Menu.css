@@ -1,0 +1,115 @@
+
+.menu-section {
+  padding: 100px 10%;
+  background: #f7f3e9;
+  color: #344c35;
+}
+
+.menu-heading {
+  text-align: center;
+  margin-bottom: 55px;
+}
+
+.menu-subtitle {
+  color: #a27b50;
+  letter-spacing: 4px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.menu-heading h2 {
+  font-family: Georgia, serif;
+  font-size: 52px;
+  margin: 15px 0;
+}
+
+.menu-heading > p:last-child {
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+}
+
+.menu-card {
+  background: #fffdf7;
+  padding: 30px;
+  border: 1px solid #e8e0d2;
+  transition: 0.3s ease;
+}
+
+.menu-card:hover {
+  transform: translateY(-7px);
+  box-shadow: 0 12px 25px rgba(52, 76, 53, 0.10);
+}
+
+.menu-category {
+  color: #a27b50;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: bold;
+}
+
+.menu-card h3 {
+  font-family: Georgia, serif;
+  font-size: 24px;
+  margin: 20px 0 12px;
+}
+
+.menu-card p {
+  color: #777;
+  font-size: 14px;
+  line-height: 1.7;
+  min-height: 48px;
+}
+
+.menu-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 25px;
+  border-top: 1px solid #e8e0d2;
+  padding-top: 18px;
+}
+
+.menu-price {
+  font-size: 20px;
+  font-weight: bold;
+  color: #344c35;
+}
+
+.menu-arrow {
+  font-size: 25px;
+  color: #a27b50;
+}
+
+.menu-note {
+  text-align: center;
+  margin-top: 50px;
+  font-family: Georgia, serif;
+  font-style: italic;
+  color: #a27b50;
+}
+
+@media (max-width: 900px) {
+  .menu-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .menu-section {
+    padding: 70px 7%;
+  }
+
+  .menu-heading h2 {
+    font-size: 40px;
+  }
+
+  .menu-grid {
+    grid-template-columns: 1fr;
+  }
+}
