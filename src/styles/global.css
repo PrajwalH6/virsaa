@@ -60,3 +60,38 @@ section {
   background: var(--color-olive);
   color: var(--color-espresso);
 }
+
+/* Mobile and touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+
+  /* Disable hover transformations */
+  .nav-link:hover,
+  .btn:hover,
+  .card:hover,
+  .product-card:hover {
+    transform: none;
+    box-shadow: inherit;
+  }
+
+  /* Prevent hover-based color changes */
+  .nav-link:hover {
+    color: inherit;
+  }
+
+  /* Smooth touch interactions */
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

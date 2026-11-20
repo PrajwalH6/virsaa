@@ -1,4 +1,8 @@
 
+/* =================================
+   HERO SECTION
+================================= */
+
 .hero {
   min-height: calc(100vh - 90px);
   background: var(--color-cream);
@@ -7,7 +11,35 @@
   align-items: center;
   padding: 65px 0 100px;
   overflow: hidden;
+  isolation: isolate;
 }
+
+/* Background decoration */
+
+.hero-bg-decoration {
+  position: absolute;
+  top: 8%;
+  left: -180px;
+  width: 350px;
+  height: 350px;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  opacity: 0.5;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.hero-bg-decoration::after {
+  content: "";
+  position: absolute;
+  inset: 35px;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+}
+
+/* =================================
+   MAIN CONTAINER
+================================= */
 
 .hero-container {
   width: min(90%, 1400px);
@@ -18,19 +50,33 @@
   gap: 65px;
 }
 
-/* LEFT CONTENT */
+/* =================================
+   LEFT CONTENT
+================================= */
 
 .hero-content {
   padding: 20px 0;
 }
 
 .hero-eyebrow {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
   color: var(--color-avocado-light);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 4px;
   margin-bottom: 28px;
+
+  animation: heroReveal 0.8s ease both;
+}
+
+.eyebrow-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--color-avocado);
+  border-radius: 50%;
+  box-shadow: 0 0 0 5px rgba(100, 120, 60, 0.12);
 }
 
 .hero-content h1 {
@@ -40,11 +86,19 @@
   font-weight: 500;
   color: var(--color-espresso);
   letter-spacing: -3px;
+
+  animation: heroReveal 0.9s ease 0.12s both;
 }
 
 .hero-content h1 span {
   color: var(--color-avocado);
   font-style: italic;
+  display: inline-block;
+  transition: transform 0.4s ease;
+}
+
+.hero-content h1 span:hover {
+  transform: translateY(-4px);
 }
 
 .hero-description {
@@ -53,9 +107,13 @@
   color: var(--text-secondary);
   font-size: 15px;
   line-height: 1.9;
+
+  animation: heroReveal 0.9s ease 0.24s both;
 }
 
-/* BUTTONS */
+/* =================================
+   BUTTONS
+================================= */
 
 .hero-buttons {
   display: flex;
@@ -63,39 +121,72 @@
   gap: 30px;
   margin-top: 38px;
   flex-wrap: wrap;
+
+  animation: heroReveal 0.9s ease 0.36s both;
 }
 
 .hero-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 15px;
   background: var(--color-avocado);
   color: var(--color-cream);
   padding: 17px 25px;
   font-size: 12px;
   letter-spacing: 0.5px;
-  transition: var(--transition);
+  text-decoration: none;
+  border-radius: 3px;
+  transition:
+    background 0.35s ease,
+    transform 0.35s ease,
+    box-shadow 0.35s ease;
 }
 
 .hero-btn-primary:hover {
   background: var(--color-avocado-light);
-  transform: translateY(-3px);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(65, 85, 42, 0.18);
 }
 
-.hero-btn-primary span {
-  margin-left: 12px;
+.hero-btn-arrow {
+  display: inline-block;
+  transition: transform 0.35s ease;
+}
+
+.hero-btn-primary:hover .hero-btn-arrow {
+  transform: translate(4px, -4px);
 }
 
 .hero-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
   color: var(--color-avocado);
   font-size: 13px;
+  text-decoration: none;
   border-bottom: 1px solid var(--color-avocado);
   padding-bottom: 6px;
-  transition: var(--transition);
+  transition:
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.secondary-arrow {
+  transition: transform 0.3s ease;
 }
 
 .hero-btn-secondary:hover {
   color: var(--color-terracotta);
+  border-color: var(--color-terracotta);
 }
 
-/* BOTTOM NOTE */
+.hero-btn-secondary:hover .secondary-arrow {
+  transform: translateX(5px);
+}
+
+/* =================================
+   BOTTOM NOTE
+================================= */
 
 .hero-note {
   display: flex;
@@ -106,6 +197,8 @@
   font-size: 9px;
   letter-spacing: 2.5px;
   font-weight: 600;
+
+  animation: heroReveal 0.9s ease 0.48s both;
 }
 
 .hero-note-line {
@@ -114,11 +207,14 @@
   background: var(--color-avocado-light);
 }
 
-/* RIGHT IMAGE */
+/* =================================
+   RIGHT IMAGE
+================================= */
 
 .hero-visual {
   position: relative;
   padding: 15px 25px 35px 0;
+  animation: heroImageReveal 1.1s ease 0.2s both;
 }
 
 .hero-image-wrapper {
@@ -127,18 +223,33 @@
   width: 100%;
   overflow: hidden;
   border-radius: 48% 48% 5px 5px;
+  background: var(--color-avocado);
 }
 
 .hero-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.8s ease;
+  display: block;
+  transition: transform 1s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 .hero-image-wrapper:hover .hero-image {
-  transform: scale(1.04);
+  transform: scale(1.07);
 }
+
+.hero-image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(35, 45, 25, 0.22),
+    transparent 35%
+  );
+  pointer-events: none;
+}
+
+/* Image label */
 
 .hero-image-label {
   position: absolute;
@@ -151,9 +262,40 @@
   gap: 9px;
   font-size: 9px;
   letter-spacing: 1.5px;
+  z-index: 2;
+  transition: transform 0.3s ease;
 }
 
-/* DECORATIVE STAMP */
+.hero-image-wrapper:hover .hero-image-label {
+  transform: translateY(-5px);
+}
+
+/* =================================
+   IMAGE DECORATION
+================================= */
+
+.hero-image-decoration {
+  position: absolute;
+  top: -5px;
+  right: 0;
+  width: 95px;
+  height: 95px;
+  border: 1px solid var(--color-avocado-light);
+  border-radius: 50%;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.hero-image-decoration span {
+  position: absolute;
+  inset: 12px;
+  border: 1px solid var(--color-avocado-light);
+  border-radius: 50%;
+}
+
+/* =================================
+   DECORATIVE STAMP
+================================= */
 
 .hero-stamp {
   position: absolute;
@@ -172,6 +314,13 @@
   border: 5px solid var(--color-cream);
   font-size: 9px;
   letter-spacing: 2px;
+  z-index: 3;
+  animation: stampFloat 5s ease-in-out infinite;
+  transition: background 0.3s ease;
+}
+
+.hero-stamp:hover {
+  background: var(--color-avocado-light);
 }
 
 .hero-stamp strong {
@@ -180,7 +329,48 @@
   letter-spacing: 1px;
 }
 
-/* BOTTOM BAR */
+/* =================================
+   FLOATING NOTE
+================================= */
+
+.hero-floating-note {
+  position: absolute;
+  left: -35px;
+  bottom: 100px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-cream);
+  padding: 14px 18px;
+  box-shadow: 0 8px 30px rgba(40, 55, 25, 0.08);
+  z-index: 4;
+  animation: floatingNote 5s ease-in-out infinite;
+}
+
+.floating-note-icon {
+  font-size: 25px;
+  color: var(--color-avocado);
+}
+
+.hero-floating-note div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hero-floating-note strong {
+  font-size: 11px;
+  color: var(--color-espresso);
+}
+
+.hero-floating-note div span {
+  font-size: 9px;
+  color: var(--text-secondary);
+}
+
+/* =================================
+   BOTTOM BAR
+================================= */
 
 .hero-bottom {
   position: absolute;
@@ -189,12 +379,73 @@
   right: 5%;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   color: var(--text-secondary);
   font-size: 9px;
   letter-spacing: 2px;
 }
 
-/* TABLET */
+.hero-bottom a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.hero-bottom a:hover {
+  color: var(--color-avocado);
+}
+
+/* =================================
+   ANIMATIONS
+================================= */
+
+@keyframes heroReveal {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroImageReveal {
+  from {
+    opacity: 0;
+    transform: translateX(35px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes stampFloat {
+  0%, 100% {
+    transform: rotate(12deg) translateY(0);
+  }
+
+  50% {
+    transform: rotate(8deg) translateY(-9px);
+  }
+}
+
+@keyframes floatingNote {
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* =================================
+   TABLET
+================================= */
 
 @media (max-width: 1000px) {
   .hero-container {
@@ -208,13 +459,19 @@
   .hero-content h1 {
     font-size: 58px;
   }
+
+  .hero-floating-note {
+    left: -15px;
+  }
 }
 
-/* MOBILE */
+/* =================================
+   MOBILE
+================================= */
 
 @media (max-width: 700px) {
   .hero {
-    padding: 45px 0 85px;
+    padding: 45px 0 90px;
     min-height: auto;
   }
 
@@ -228,8 +485,19 @@
     letter-spacing: -2px;
   }
 
+  .hero-eyebrow {
+    margin-bottom: 22px;
+    letter-spacing: 3px;
+  }
+
   .hero-description {
     font-size: 14px;
+    margin-top: 22px;
+  }
+
+  .hero-buttons {
+    gap: 22px;
+    margin-top: 30px;
   }
 
   .hero-note {
@@ -255,11 +523,37 @@
     font-size: 21px;
   }
 
+  .hero-floating-note {
+    left: -5px;
+    bottom: 75px;
+    padding: 11px 13px;
+  }
+
+  .hero-floating-note strong {
+    font-size: 10px;
+  }
+
+  .hero-image-decoration {
+    width: 70px;
+    height: 70px;
+  }
+
   .hero-bottom {
     font-size: 8px;
     bottom: 20px;
+    letter-spacing: 1px;
+  }
+
+  .hero-bg-decoration {
+    width: 200px;
+    height: 200px;
+    left: -120px;
   }
 }
+
+/* =================================
+   SMALL MOBILE
+================================= */
 
 @media (max-width: 380px) {
   .hero-image-wrapper {
@@ -267,6 +561,29 @@
   }
 
   .hero-bottom {
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
+    font-size: 7px;
+  }
+
+  .hero-buttons {
+    gap: 18px;
+  }
+
+  .hero-floating-note {
+    left: 0;
+  }
+}
+
+/* =================================
+   ACCESSIBILITY
+================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero *,
+  .hero *::before,
+  .hero *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
 }
