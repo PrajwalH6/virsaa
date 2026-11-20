@@ -9,7 +9,6 @@ function Hero() {
 
       <div className="hero-container">
 
-        {/* Left Content */}
         <div className="hero-content">
 
           <span className="hero-eyebrow">
@@ -24,8 +23,8 @@ function Hero() {
           </h1>
 
           <p className="hero-description">
-            Discover the goodness of avocados through
-            fresh flavours, wholesome ingredients and
+            Enjoy wholesome vegetarian goodness with
+            fresh ingredients, colourful flavours and
             a café experience made to be enjoyed.
           </p>
 
@@ -48,7 +47,6 @@ function Hero() {
 
         </div>
 
-        {/* Right Image */}
         <div className="hero-visual">
 
           <div className="hero-image-decoration" aria-hidden="true">
@@ -56,9 +54,10 @@ function Hero() {
           </div>
 
           <div className="hero-image-wrapper">
+
             <img
-              src="https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=1200&q=85"
-              alt="Fresh café breakfast with wholesome ingredients"
+              src="https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&w=1200&q=85"
+              alt="Fresh sliced avocado with vibrant green natural ingredients"
               className="hero-image"
             />
 
@@ -67,13 +66,13 @@ function Hero() {
             <div className="hero-image-label">
               <span>FRESH</span>
               <span>•</span>
-              <span>NATURAL</span>
+              <span>AVOCADO</span>
               <span>•</span>
-              <span>GOOD</span>
+              <span>NATURAL</span>
             </div>
+
           </div>
 
-          {/* Decorative Stamp */}
           <div className="hero-stamp">
             <span>THE</span>
             <strong>GOOD</strong>
@@ -81,7 +80,6 @@ function Hero() {
             <span>OF NATURE</span>
           </div>
 
-          {/* Floating Caption */}
           <div className="hero-floating-note">
             <span className="floating-note-icon">✳</span>
             <div>
@@ -94,7 +92,6 @@ function Hero() {
 
       </div>
 
-      {/* Bottom Bar */}
       <div className="hero-bottom">
         <span>01 / 04</span>
         <a href="#about">SCROLL TO EXPLORE ↓</a>
