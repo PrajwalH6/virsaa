@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import "./Contact.css";
 
-// Replace this with your actual Formspree endpoint
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/xrpqlwdl";
 
 function Contact() {
@@ -11,7 +10,6 @@ function Contact() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setLoading(true);
     setStatus("");
 
@@ -52,33 +50,96 @@ function Contact() {
 
       <div className="contact-container">
 
+        {/* OFFICE INFORMATION */}
         <div className="contact-info">
 
-          <h3>Visit VRISAA CAFÉ</h3>
+          <h3>Our Office</h3>
 
-          <div className="contact-item">
-            <h4>OUR LOCATION</h4>
-            <p>Add your café address here</p>
+          <div className="office-detail">
+            <span className="office-icon">📍</span>
+            <div className="office-text">
+              <p>VriSaa Naturals Pvt Ltd</p>
+              <p>C-204, 2nd Floor, Soundarya Kamakshi</p>
+              <p>Magadi Main Road, Kamakshipalya</p>
+              <p>Bengaluru, Karnataka-560079</p>
+            </div>
           </div>
 
-          <div className="contact-item">
-            <h4>PHONE NUMBER</h4>
-            <p>Add your café phone number</p>
+          <div className="office-detail">
+            <span className="office-icon">☎</span>
+            <a href="tel:+918217524813">
+              +91 8217524813
+            </a>
           </div>
 
-          <div className="contact-item">
-            <h4>EMAIL ADDRESS</h4>
-            <p>Add your café email address</p>
+          <div className="office-detail">
+            <span className="office-icon">✉</span>
+            <a href="mailto:info@vrisaanaturals.com">
+              info@vrisaanaturals.com
+            </a>
           </div>
 
-          <div className="contact-item">
-            <h4>OPENING HOURS</h4>
-            <p>Monday – Sunday</p>
-            <p>Update your café timings here</p>
+          {/* SOCIAL MEDIA ICONS */}
+          <div className="office-socials">
+
+            <a
+              href="https://twitter.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Twitter"
+            >
+              𝕏
+            </a>
+
+            <a
+              href="https://facebook.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook"
+            >
+              f
+            </a>
+
+            
+            <a
+            href="https://www.instagram.com/vrisaacafe/?hl=en"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="VriSaa Café Instagram"
+            >
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="23"
+                height="23"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+            >
+                <rect x="2" y="2" width="20" height="20" rx="5" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+            </svg>
+            </a>
+
+
+            <a
+              href="https://linkedin.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+            >
+              in
+            </a>
+
           </div>
 
         </div>
 
+        {/* EXISTING CONTACT FORM */}
         <div className="contact-form-container">
 
           <h3>Send Us a Message</h3>

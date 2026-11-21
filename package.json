@@ -1,4 +1,3 @@
-
 {
   "name": "vrisaa-cafe",
   "version": "1.0.0",
@@ -10,10 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.109.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "supabase": "^3.2.0",
     "vite": "^7.0.0"
   }
 }

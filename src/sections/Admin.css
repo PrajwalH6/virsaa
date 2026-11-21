@@ -1,0 +1,212 @@
+
+.admin-page {
+  min-height: 100vh;
+  background: #f5f1e7;
+  padding: 35px 5%;
+  color: #304532;
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+}
+
+.admin-header h1 {
+  font: normal clamp(25px, 3vw, 38px) Georgia, serif;
+}
+
+.admin-header a {
+  color: #304532;
+}
+
+.admin-page button {
+  border: 0;
+  background: #344c35;
+  color: white;
+  padding: 11px 15px;
+  cursor: pointer;
+}
+
+.admin-page button:disabled {
+  opacity: 0.5;
+}
+
+.admin-login {
+  max-width: 400px;
+  background: white;
+  padding: 32px;
+  margin: 50px auto;
+  display: grid;
+  gap: 20px;
+}
+
+.admin-login h2 {
+  font-family: Georgia, serif;
+}
+
+.admin-login label {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-login input {
+  padding: 12px;
+  border: 1px solid #bbb;
+}
+
+.admin-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+  background: white;
+  padding: 15px;
+}
+
+.admin-table-wrap table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 850px;
+  text-align: left;
+}
+
+.admin-table-wrap th,
+.admin-table-wrap td {
+  border-bottom: 1px solid #e4e8df;
+  padding: 14px;
+  vertical-align: top;
+}
+
+.admin-table-wrap th {
+  background: #edf2e8;
+}
+
+.admin-actions {
+  white-space: nowrap;
+}
+
+.admin-actions button {
+  margin: 2px;
+}
+
+.admin-actions button:hover {
+  background: #85a94d;
+}
+
+.admin-message {
+  background: #fff0dc;
+  padding: 15px;
+  margin-top: 20px;
+}
+
+
+/* Booking status labels */
+
+.admin-status {
+  display: inline-block;
+  padding: 7px 12px;
+  border-radius: 20px;
+  text-transform: capitalize;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-pending {
+  background: #fff0c2;
+  color: #906000;
+}
+
+.admin-confirmed {
+  background: #def3df;
+  color: #236d30;
+}
+
+.admin-rejected,
+.admin-cancelled {
+  background: #fce2e2;
+  color: #a12b2b;
+}
+
+/* WhatsApp button */
+
+.admin-page .admin-whatsapp {
+  background: #25d366;
+  color: #ffffff;
+  white-space: nowrap;
+  border-radius: 4px;
+  padding: 11px 15px;
+}
+
+.admin-page .admin-whatsapp:hover {
+  background: #128c4b;
+}
+
+/* Admin dashboard navigation */
+
+.admin-dashboard-tabs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 24px 0;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #d9e1d3;
+}
+
+.admin-dashboard-tabs button {
+  padding: 12px 22px;
+  background: #e8eee4;
+  color: #344c35;
+  border: 1px solid #d9e1d3;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.admin-dashboard-tabs button.active {
+  background: #344c35;
+  color: white;
+}
+
+.admin-dashboard-tabs button:hover {
+  opacity: 0.9;
+}
+
+/* Unauthorized users */
+
+.admin-access-denied {
+  max-width: 550px;
+  margin: 70px auto;
+  padding: 35px;
+  background: #fff;
+  border: 1px solid #e3d6d6;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.admin-access-denied h2 {
+  color: #a12b2b;
+}
+
+.admin-access-denied p {
+  color: #586457;
+  line-height: 1.7;
+}
+
+.admin-access-denied button {
+  margin-top: 20px;
+  padding: 12px 25px;
+  background: #344c35;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}

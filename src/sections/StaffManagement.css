@@ -1,0 +1,94 @@
+
+.staff-management {
+  max-width: 1000px;
+  margin: 40px auto;
+  padding: 30px;
+  background: #f7f8f3;
+  color: #304532;
+}
+
+.staff-management h2,
+.staff-management h3 {
+  font-family: Georgia, serif;
+}
+
+.staff-management > p {
+  line-height: 1.7;
+  color: #60705c;
+}
+
+.staff-management form {
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 24px;
+  margin: 25px 0;
+  background: white;
+  border: 1px solid #d9e1d3;
+}
+
+.staff-management label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.staff-management input,
+.staff-management select {
+  padding: 12px;
+  border: 1px solid #cbd6c6;
+  border-radius: 4px;
+  font: inherit;
+}
+
+.staff-management button {
+  padding: 11px 17px;
+  border: 0;
+  background: #344c35;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.staff-management button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.staff-list {
+  display: grid;
+  gap: 12px;
+}
+
+.staff-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #d9e1d3;
+}
+
+.staff-item p {
+  margin: 8px 0;
+}
+
+.staff-item small {
+  color: #71806d;
+}
+
+.staff-message {
+  padding: 15px;
+  background: #e8f0e2;
+  margin-top: 20px;
+}
+
+@media (max-width: 600px) {
+  .staff-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

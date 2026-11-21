@@ -1,0 +1,147 @@
+
+.booking-section {
+  background: #f5f1e7;
+  padding: 95px 7%;
+  scroll-margin-top: 80px;
+}
+
+.booking-wrap {
+  max-width: 1200px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 70px;
+  align-items: center;
+}
+
+.booking-kicker {
+  color: #7b9e42;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+.booking-intro h2 {
+  font-family: Georgia, serif;
+  color: #304532;
+  font-size: clamp(38px, 5vw, 65px);
+  line-height: 1.15;
+  margin: 18px 0;
+}
+
+.booking-intro h2 em {
+  color: #84a94a;
+}
+
+.booking-intro p {
+  color: #606b5c;
+  font-size: 17px;
+  line-height: 1.9;
+}
+
+.booking-hint {
+  border-left: 3px solid #85b748;
+  padding: 12px 18px;
+  margin-top: 26px;
+  color: #425a3c;
+  background: #e9efdf;
+}
+
+.booking-form {
+  background: #ffffff;
+  padding: 38px;
+  box-shadow: 0 14px 45px #20302014;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.booking-form h3 {
+  font: normal 29px Georgia, serif;
+  color: #304532;
+  margin: 0 0 5px;
+}
+
+.booking-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.booking-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #41523f;
+}
+
+.booking-form input,
+.booking-form select,
+.booking-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 12px;
+  border: 1px solid #d7ddce;
+  background: #fbfcf8;
+  color: #26351f;
+  font: inherit;
+  border-radius: 3px;
+}
+
+.booking-form input:focus,
+.booking-form textarea:focus,
+.booking-form select:focus {
+  outline: 2px solid #85b748;
+  outline-offset: 1px;
+}
+
+.booking-form button {
+  background: #344c35;
+  color: white;
+  border: 0;
+  padding: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.booking-form button:hover {
+  background: #85a94d;
+}
+
+.booking-form button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.booking-message {
+  color: #344c35;
+  background: #eaf1e3;
+  padding: 13px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+@media (max-width: 800px) {
+  .booking-section {
+    padding: 65px 6%;
+  }
+
+  .booking-wrap {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .booking-form {
+    padding: 25px;
+  }
+}
+
+@media (max-width: 450px) {
+  .booking-grid {
+    grid-template-columns: 1fr;
+  }
+}
