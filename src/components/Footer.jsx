@@ -2,58 +2,109 @@
 import React from "react";
 import "./Footer.css";
 
+const InstagramIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+    aria-hidden="true">
+    <rect x="2" y="2" width="20" height="20" rx="5" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);
+
 function Footer() {
   return (
     <footer className="footer">
-
       <div className="footer-container">
 
+        {/* Branding */}
         <div className="footer-brand">
-          <h2>VRISAA <span>CAFÉ</span></h2>
+          <span className="footer-brand-eyebrow">
+            GOOD FOOD. GOOD MOMENTS.
+          </span>
 
-          <p>
+          <h2>
+            VRISAA <span>CAFÉ</span>
+          </h2>
+
+          <p className="footer-tagline">
             Avocado at heart. Good food all around.
           </p>
 
           <p className="footer-description">
-            Fresh ingredients, beautiful flavours and
-            memorable moments. Visit us and experience
-            the warmth of VRISAA CAFÉ.
+            Fresh ingredients, beautiful flavours, and
+            memorable moments. A warm place to gather,
+            connect, and make every visit special.
           </p>
         </div>
 
-        <div className="footer-links">
-          <h3>QUICK LINKS</h3>
-
+        {/* Quick Links */}
+        <nav className="footer-links" aria-label="Footer navigation">
+          <h3>EXPLORE</h3>
           <a href="#home">Home</a>
           <a href="#about">About Us</a>
           <a href="#menu">Our Menu</a>
           <a href="#specials">Specials</a>
           <a href="#gallery">Gallery</a>
-          <a href="#contact">Contact</a>
-        </div>
+          <a href="#contact">Contact Us</a>
+        </nav>
 
+        {/* Contact */}
         <div className="footer-contact">
           <h3>GET IN TOUCH</h3>
 
-          <p>📍 Add your café address</p>
-          <p>📞 Add your phone number</p>
-          <p>✉️ Add your email address</p>
+          <div className="footer-contact-item">
+            <span aria-hidden="true">⌖</span>
+            <p>
+              VriSaa Naturals Pvt Ltd<br />
+              C-204, 2nd Floor, Soundarya Kamakshi<br />
+              Magadi Main Road, Kamakshipalya<br />
+              Bengaluru, Karnataka - 560079
+            </p>
+          </div>
+
+          <div className="footer-contact-item">
+            <span aria-hidden="true">☎</span>
+            <a href="tel:+918217524813">
+              +91 8217524813
+            </a>
+          </div>
+
+          <div className="footer-contact-item">
+            <span aria-hidden="true">✉</span>
+            <a href="mailto:info@vrisaanaturals.com">
+              info@vrisaanaturals.com
+            </a>
+          </div>
         </div>
 
+        {/* Social */}
         <div className="footer-social">
-          <h3>FOLLOW US</h3>
+          <h3>FOLLOW OUR JOURNEY</h3>
 
-          <a href="https://www.instagram.com/" target="_blank" rel="noreferrer">
-            Instagram
-          </a>
+          <p>
+            A little glimpse of the food, the atmosphere,
+            and everything we love.
+          </p>
 
-          <a href="https://www.facebook.com/" target="_blank" rel="noreferrer">
-            Facebook
-          </a>
+          <div className="footer-social-icons">
+            <a
+              href="https://www.instagram.com/vrisaacafe/?hl=en"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="VriSaa Café on Instagram"
+            >
+              <InstagramIcon />
+            </a>
+          </div>
 
-          <a href="https://www.pinterest.com/" target="_blank" rel="noreferrer">
-            Pinterest
+          <a
+            className="footer-instagram-link"
+            href="https://www.instagram.com/vrisaacafe/?hl=en"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            @vrisaacafe ↗
           </a>
         </div>
 
@@ -65,11 +116,14 @@ function Footer() {
           All Rights Reserved.
         </p>
 
+        <p className="footer-bottom-message">
+          Made with care, served with love.
+        </p>
+
         <a href="#home" className="back-to-top">
           BACK TO TOP ↑
         </a>
       </div>
-
     </footer>
   );
 }

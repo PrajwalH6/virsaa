@@ -1,68 +1,106 @@
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+
 import { supabase, configured } from "../lib/supabase";
 import StaffManagement from "./StaffManagement";
 import "./Admin.css";
 
-// -------------------------------------------
-// WhatsApp confirmation messages
-// -------------------------------------------
+// ---------------------------------------
+// WhatsApp message generator
+// ---------------------------------------
 
 function buildWhatsAppMessage(booking) {
-  const date = booking.booking_date;
-  const time = booking.booking_time?.slice(0, 5);
+  const name = booking.customer_name || "Guest";
+
+  const date = new Date(
+    `${booking.booking_date}T00:00:00`
+  ).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  const time = new Date(
+    `2000-01-01T${booking.booking_time}`
+  ).toLocaleTimeString("en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
   const guests = booking.guests;
   const reference = booking.id;
 
-  const greeting = `Hello ${booking.customer_name}! 🌿`;
+  const details =
+    `*Reservation Details*\n` +
+    `--------------------------\n` +
+    `*Date:* ${date}\n` +
+    `*Time:* ${time}\n` +
+    `*Guests:* ${guests} ${guests === 1 ? "Person" : "People"}\n`;
 
   if (booking.status === "confirmed") {
-    return `${greeting}
-
-Your table reservation at VriSaa Café has been CONFIRMED! ✅
-
-📅 Date: ${date}
-🕒 Time: ${time}
-👥 Guests: ${guests}
-🔖 Booking Reference: ${reference}
-
-We look forward to welcoming you!
-
-— Team VriSaa Café`;
+    return (
+      `*VRISAA CAFÉ*\n` +
+      `*TABLE RESERVATION CONFIRMED*\n\n` +
+      `Hello ${name}!\n\n` +
+      `Your table reservation has been successfully confirmed. ` +
+      `We look forward to hosting you!\n\n` +
+      details +
+      `*Status:* Confirmed\n\n` +
+      `*Booking Reference*\n` +
+      `${reference}\n\n` +
+      `Please keep this reference for tracking your reservation.\n\n` +
+      `Thank you for choosing VriSaa Café.\n\n` +
+      `Warm regards,\n` +
+      `*Team VriSaa Café*`
+    );
   }
 
   if (booking.status === "rejected") {
-    return `${greeting}
-
-Thank you for choosing VriSaa Café.
-
-Unfortunately, we are unable to accommodate your table reservation request.
-
-📅 Requested Date: ${date}
-🕒 Requested Time: ${time}
-🔖 Booking Reference: ${reference}
-
-Please contact us for another available time.
-
-— Team VriSaa Café`;
+    return (
+      `*VRISAA CAFÉ*\n` +
+      `*RESERVATION UPDATE*\n\n` +
+      `Hello ${name},\n\n` +
+      `Thank you for choosing VriSaa Café.\n\n` +
+      `Unfortunately, we are unable to accommodate ` +
+      `your requested reservation.\n\n` +
+      details +
+      `*Status:* Not Available\n\n` +
+      `*Booking Reference*\n` +
+      `${reference}\n\n` +
+      `Please contact us to explore another available time.\n\n` +
+      `Warm regards,\n` +
+      `*Team VriSaa Café*`
+    );
   }
 
   if (booking.status === "cancelled") {
-    return `${greeting}
-
-Your table reservation at VriSaa Café has been cancelled.
-
-📅 Date: ${date}
-🕒 Time: ${time}
-🔖 Booking Reference: ${reference}
-
-Please contact us if you would like to make another reservation.
-
-— Team VriSaa Café`;
+    return (
+      `*VRISAA CAFÉ*\n` +
+      `*RESERVATION CANCELLED*\n\n` +
+      `Hello ${name},\n\n` +
+      `Your table reservation has been cancelled.\n\n` +
+      details +
+      `*Status:* Cancelled\n\n` +
+      `*Booking Reference*\n` +
+      `${reference}\n\n` +
+      `If you would like to make another reservation, ` +
+      `please contact us.\n\n` +
+      `Warm regards,\n` +
+      `*Team VriSaa Café*`
+    );
   }
 
   return "";
 }
+
+// ---------------------------------------
+// Open WhatsApp
+// ---------------------------------------
 
 function openWhatsApp(booking) {
   if (
@@ -73,49 +111,60 @@ function openWhatsApp(booking) {
     return;
   }
 
-  const phone = String(booking.phone || "").replace(/\D/g, "");
+  // Normalize Indian phone number
+  let phone = String(booking.phone || "").replace(/\D/g, "");
 
-  if (!/^[0-9]{10}$/.test(phone)) {
-    alert("Customer phone number is invalid.");
+  if (phone.length === 10) {
+    phone = "91" + phone;
+  }
+
+  if (!/^91[6-9]\d{9}$/.test(phone)) {
+    alert("Please enter a valid Indian WhatsApp number.");
     return;
   }
 
   const message = buildWhatsAppMessage(booking);
+  const encodedMessage = encodeURIComponent(message);
 
-  const url =
-    `https://wa.me/91${phone}?text=` +
-    encodeURIComponent(message);
+  const isMobile =
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-  window.open(url, "_blank", "noopener,noreferrer");
+  if (isMobile) {
+    // Attempts to open the installed WhatsApp app
+    window.location.href =
+      `whatsapp://send?phone=${phone}&text=${encodedMessage}`;
+  } else {
+    // Opens the customer's chat in WhatsApp Web
+    window.open(
+      `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  }
 }
 
-// -------------------------------------------
-// Admin Dashboard
-// -------------------------------------------
+// ---------------------------------------
+// Main Admin Component
+// ---------------------------------------
 
 export default function Admin() {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
   const [staffRole, setStaffRole] = useState(null);
   const [roleLoading, setRoleLoading] = useState(true);
-
   const [activeTab, setActiveTab] = useState("reservations");
-
   const [rows, setRows] = useState([]);
   const [message, setMessage] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
 
-  // -------------------------------------------
-  // Authentication
-  // -------------------------------------------
-
+  // Watch login/logout and restore the saved Supabase session.
   useEffect(() => {
     if (!supabase) {
       setAuthLoading(false);
@@ -123,22 +172,21 @@ export default function Admin() {
     }
 
     let active = true;
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) {
-        setSession(data.session);
-        setAuthLoading(false);
-      }
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return;
+      if (error) console.error("Session check failed:", error);
+      setSession(data?.session ?? null);
+      setAuthLoading(false);
+    }).catch((error) => {
+      console.error("Session check failed:", error);
+      if (active) setAuthLoading(false);
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {
-        if (active) {
-          setSession(newSession);
-          setAuthLoading(false);
-        }
+        if (!active) return;
+        setSession(newSession);
+        setAuthLoading(false);
       }
     );
 
@@ -148,9 +196,9 @@ export default function Admin() {
     };
   }, []);
 
-  // -------------------------------------------
-  // Verify staff role
-  // -------------------------------------------
+  // ---------------------------------------
+  // Verify Admin Role
+  // ---------------------------------------
 
   useEffect(() => {
     let active = true;
@@ -185,11 +233,13 @@ export default function Admin() {
           );
         }
       } catch (error) {
-        console.error("Role verification failed:", error);
+        console.error(error);
 
         if (active) {
           setStaffRole(null);
-          setMessage("Unable to verify staff permissions.");
+          setMessage(
+            "Unable to verify administrator permissions."
+          );
         }
       } finally {
         if (active) setRoleLoading(false);
@@ -204,13 +254,24 @@ export default function Admin() {
   }, [session?.user?.id]);
 
   const isAuthorized =
-    staffRole === "admin" || staffRole === "super_admin";
+    staffRole === "admin" ||
+    staffRole === "super_admin";
 
   const isSuperAdmin = staffRole === "super_admin";
 
-  // -------------------------------------------
-  // Load reservations
-  // -------------------------------------------
+  const totalBookings = rows.length;
+
+const pendingBookings = rows.filter(
+  (booking) => booking.status === "pending"
+).length;
+
+const confirmedBookings = rows.filter(
+  (booking) => booking.status === "confirmed"
+).length;
+
+  // ---------------------------------------
+  // Load Bookings
+  // ---------------------------------------
 
   const loadBookings = useCallback(async () => {
     if (!supabase || !isAuthorized) return;
@@ -228,9 +289,10 @@ export default function Admin() {
 
       setRows(data || []);
     } catch (error) {
-      console.error("Booking load failed:", error);
+      console.error(error);
+
       setMessage(
-        "Unable to load bookings. Check your staff permissions."
+        "Unable to load bookings. Check staff permissions."
       );
     } finally {
       setLoading(false);
@@ -243,9 +305,9 @@ export default function Admin() {
     }
   }, [isAuthorized, loadBookings]);
 
-  // -------------------------------------------
-  // Login
-  // -------------------------------------------
+  // ---------------------------------------
+  // Admin Login
+  // ---------------------------------------
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -269,26 +331,64 @@ export default function Admin() {
       console.error(error);
 
       setMessage(
-        "Sign in failed. Please check your email and password."
+        "Login failed. Please check your email and password."
       );
     } finally {
       setLoginLoading(false);
     }
   }
 
-  // -------------------------------------------
+  // ---------------------------------------
+  // Forgot Password
+  // ---------------------------------------
+
+  async function handleForgotPassword(e) {
+    e.preventDefault();
+
+    if (!supabase) return;
+
+    setResetLoading(true);
+    setMessage("");
+
+    try {
+      const { error } =
+        await supabase.auth.resetPasswordForEmail(
+          resetEmail.trim(),
+          {
+            redirectTo:
+              `${window.location.origin}/admin/reset-password`,
+          }
+        );
+
+      if (error) throw error;
+
+      setMessage(
+        "If an account exists for this email, a password reset link will be sent. Please check your inbox and spam folder."
+      );
+
+      setForgotPasswordMode(false);
+    } catch (error) {
+      console.error(error);
+
+      setMessage(
+        "Unable to send the reset link. Please try again later."
+      );
+    } finally {
+      setResetLoading(false);
+    }
+  }
+
+  // ---------------------------------------
   // Logout
-  // -------------------------------------------
+  // ---------------------------------------
 
   async function handleLogout() {
     if (!supabase) return;
 
-    setMessage("");
-
     const { error } = await supabase.auth.signOut();
 
     if (error) {
-      setMessage("Unable to sign out. Please try again.");
+      setMessage("Unable to sign out.");
       return;
     }
 
@@ -297,9 +397,9 @@ export default function Admin() {
     setActiveTab("reservations");
   }
 
-  // -------------------------------------------
-  // Update reservation status
-  // -------------------------------------------
+  // ---------------------------------------
+  // Update Booking
+  // ---------------------------------------
 
   async function updateBooking(id, newStatus) {
     if (!isAuthorized || updatingId) return;
@@ -308,7 +408,9 @@ export default function Admin() {
     setUpdatingId(id);
 
     try {
-      const booking = rows.find((item) => item.id === id);
+      const booking = rows.find(
+        (item) => item.id === id
+      );
 
       if (!booking) {
         throw new Error("Booking not found.");
@@ -321,7 +423,9 @@ export default function Admin() {
           newStatus === "cancelled");
 
       if (!allowed) {
-        throw new Error("Invalid booking status change.");
+        throw new Error(
+          "Invalid booking status change."
+        );
       }
 
       const { data, error } = await supabase
@@ -335,7 +439,7 @@ export default function Admin() {
 
       if (!data?.length) {
         throw new Error(
-          "Booking was already updated or access was denied."
+          "Booking already updated or access denied."
         );
       }
 
@@ -357,9 +461,9 @@ export default function Admin() {
     }
   }
 
-  // -------------------------------------------
+  // ---------------------------------------
   // Render
-  // -------------------------------------------
+  // ---------------------------------------
 
   return (
     <main className="admin-page">
@@ -369,7 +473,10 @@ export default function Admin() {
         <h1>VriSaa Café Admin Dashboard</h1>
 
         {session && (
-          <button type="button" onClick={handleLogout}>
+          <button
+            type="button"
+            onClick={handleLogout}
+          >
             Sign Out
           </button>
         )}
@@ -380,75 +487,135 @@ export default function Admin() {
       ) : authLoading ? (
         <p>Checking your session...</p>
       ) : !session ? (
-        // -------------------------------------
-        // Staff login page
-        // -------------------------------------
-
         <form
           className="admin-login"
-          onSubmit={handleLogin}
+          onSubmit={
+            forgotPasswordMode
+              ? handleForgotPassword
+              : handleLogin
+          }
         >
-          <h2>Staff Sign In</h2>
+          <h2>
+            {forgotPasswordMode
+              ? "Forgot Password"
+              : "Staff Sign In"}
+          </h2>
 
-          <p>
-            Sign in using your authorized café staff account.
-          </p>
+          {forgotPasswordMode ? (
+            <>
+              <p>
+                Enter your registered email address.
+                We will send you a password recovery link.
+              </p>
 
-          <label>
-            Email
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              required
-            />
-          </label>
+              <label>
+                Email Address
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) =>
+                    setResetEmail(e.target.value)
+                  }
+                  autoComplete="email"
+                  required
+                />
+              </label>
 
-          <label>
-            Password
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-            />
-          </label>
+              <button
+                type="submit"
+                disabled={resetLoading}
+              >
+                {resetLoading
+                  ? "Sending..."
+                  : "Send Reset Link"}
+              </button>
 
-          <button type="submit" disabled={loginLoading}>
-            {loginLoading ? "Signing In..." : "Sign In"}
-          </button>
+              <button
+                type="button"
+                className="admin-link-button"
+                onClick={() => {
+                  setForgotPasswordMode(false);
+                  setMessage("");
+                }}
+              >
+                Back to Sign In
+              </button>
+            </>
+          ) : (
+            <>
+              <p>
+                Sign in using your authorized
+                café staff account.
+              </p>
+
+              <label>
+                Email
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) =>
+                    setEmail(e.target.value)
+                  }
+                  autoComplete="email"
+                  required
+                />
+              </label>
+
+              <label>
+                Password
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) =>
+                    setPassword(e.target.value)
+                  }
+                  autoComplete="current-password"
+                  required
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={loginLoading}
+              >
+                {loginLoading
+                  ? "Signing In..."
+                  : "Sign In"}
+              </button>
+
+              <button
+                type="button"
+                className="admin-link-button"
+                onClick={() => {
+                  setResetEmail(email);
+                  setForgotPasswordMode(true);
+                  setMessage("");
+                }}
+              >
+                Forgot Password?
+              </button>
+            </>
+          )}
         </form>
       ) : roleLoading ? (
         <p>Verifying administrator permissions...</p>
       ) : !isAuthorized ? (
-        // -------------------------------------
-        // Unauthorized user
-        // -------------------------------------
-
         <section className="admin-access-denied">
           <h2>Access Denied</h2>
 
           <p>
-            Your account is authenticated, but it is not
-            authorized to access the VriSaa Café dashboard.
+            Your account is authenticated,
+            but you are not an authorized café admin.
           </p>
 
-          <p>
-            Please contact the café owner to request an
-            administrator invitation.
-          </p>
-
-          <button type="button" onClick={handleLogout}>
+          <button
+            type="button"
+            onClick={handleLogout}
+          >
             Sign Out
           </button>
         </section>
       ) : (
-        // -------------------------------------
-        // Authorized admin dashboard
-        // -------------------------------------
-
         <section>
           <div className="admin-toolbar">
             <div>
@@ -463,16 +630,62 @@ export default function Admin() {
               </p>
             </div>
           </div>
+          
+{/* Welcome Banner */}
 
-          {/* Dashboard navigation */}
+<div className="admin-welcome-banner">
+  <div>
+    <span className="admin-welcome-label">
+      VRISAA CAFÉ · MANAGEMENT PORTAL
+    </span>
+
+    <h2>Welcome back!</h2>
+
+    <p>
+      A beautiful café experience begins with
+      thoughtful hospitality. Manage your guests
+      and reservations from here.
+    </p>
+  </div>
+
+  <div className="admin-welcome-symbol">
+    ☕
+  </div>
+</div>
+
+{/* Reservation Statistics */}
+
+<div className="admin-stats-grid">
+  <div className="admin-stat-card">
+    <span>Total Reservations</span>
+    <strong>{totalBookings}</strong>
+    <small>Latest loaded bookings</small>
+  </div>
+
+  <div className="admin-stat-card">
+    <span>Pending Requests</span>
+    <strong>{pendingBookings}</strong>
+    <small>Awaiting your approval</small>
+  </div>
+
+  <div className="admin-stat-card">
+    <span>Confirmed Bookings</span>
+    <strong>{confirmedBookings}</strong>
+    <small>Ready to welcome</small>
+  </div>
+</div>
 
           <div className="admin-dashboard-tabs">
             <button
               type="button"
               className={
-                activeTab === "reservations" ? "active" : ""
+                activeTab === "reservations"
+                  ? "active"
+                  : ""
               }
-              onClick={() => setActiveTab("reservations")}
+              onClick={() =>
+                setActiveTab("reservations")
+              }
             >
               Reservations
             </button>
@@ -481,16 +694,18 @@ export default function Admin() {
               <button
                 type="button"
                 className={
-                  activeTab === "staff" ? "active" : ""
+                  activeTab === "staff"
+                    ? "active"
+                    : ""
                 }
-                onClick={() => setActiveTab("staff")}
+                onClick={() =>
+                  setActiveTab("staff")
+                }
               >
                 Manage Staff
               </button>
             )}
           </div>
-
-          {/* Reservations */}
 
           {activeTab === "reservations" && (
             <>
@@ -502,7 +717,9 @@ export default function Admin() {
                   onClick={loadBookings}
                   disabled={loading}
                 >
-                  {loading ? "Loading..." : "Refresh"}
+                  {loading
+                    ? "Loading..."
+                    : "Refresh"}
                 </button>
               </div>
 
@@ -525,19 +742,22 @@ export default function Admin() {
                   <tbody>
                     {rows.map((booking) => (
                       <tr key={booking.id}>
-                        <td>{booking.customer_name}</td>
+                        <td>
+                          {booking.customer_name}
+                        </td>
+
                         <td>{booking.phone}</td>
                         <td>{booking.booking_date}</td>
 
                         <td>
-                          {booking.booking_time?.slice(0, 5)}
+                          {booking.booking_time?.slice(
+                            0,
+                            5
+                          )}
                         </td>
 
                         <td>{booking.guests}</td>
-
-                        <td>
-                          {booking.notes || "—"}
-                        </td>
+                        <td>{booking.notes || "—"}</td>
 
                         <td>
                           <span
@@ -548,11 +768,14 @@ export default function Admin() {
                         </td>
 
                         <td className="admin-actions">
-                          {booking.status === "pending" && (
+                          {booking.status ===
+                            "pending" && (
                             <>
                               <button
                                 type="button"
-                                disabled={Boolean(updatingId)}
+                                disabled={Boolean(
+                                  updatingId
+                                )}
                                 onClick={() =>
                                   updateBooking(
                                     booking.id,
@@ -565,7 +788,9 @@ export default function Admin() {
 
                               <button
                                 type="button"
-                                disabled={Boolean(updatingId)}
+                                disabled={Boolean(
+                                  updatingId
+                                )}
                                 onClick={() =>
                                   updateBooking(
                                     booking.id,
@@ -578,10 +803,13 @@ export default function Admin() {
                             </>
                           )}
 
-                          {booking.status === "confirmed" && (
+                          {booking.status ===
+                            "confirmed" && (
                             <button
                               type="button"
-                              disabled={Boolean(updatingId)}
+                              disabled={Boolean(
+                                updatingId
+                              )}
                               onClick={() =>
                                 updateBooking(
                                   booking.id,
@@ -599,12 +827,16 @@ export default function Admin() {
                             "confirmed",
                             "rejected",
                             "cancelled",
-                          ].includes(booking.status) && (
+                          ].includes(
+                            booking.status
+                          ) && (
                             <button
                               type="button"
                               className="admin-whatsapp"
                               onClick={() =>
-                                openWhatsApp(booking)
+                                openWhatsApp(
+                                  booking
+                                )
                               }
                             >
                               Send WhatsApp
@@ -616,23 +848,28 @@ export default function Admin() {
                   </tbody>
                 </table>
 
-                {!rows.length && !loading && (
-                  <p>No booking requests found.</p>
-                )}
+                {!rows.length &&
+                  !loading && (
+                    <p>
+                      No booking requests found.
+                    </p>
+                  )}
               </div>
             </>
           )}
 
-          {/* Super Admin only */}
-
-          {isSuperAdmin && activeTab === "staff" && (
-            <StaffManagement />
-          )}
+          {isSuperAdmin &&
+            activeTab === "staff" && (
+              <StaffManagement />
+            )}
         </section>
       )}
 
       {message && (
-        <p className="admin-message" role="status">
+        <p
+          className="admin-message"
+          role="status"
+        >
           {message}
         </p>
       )}
