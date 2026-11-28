@@ -1,4 +1,5 @@
 
+import { cafeDirections } from "../lib/cafeLocation";
 import React from "react";
 import "./Footer.css";
 
@@ -60,6 +61,8 @@ function Footer() {
               C-204, 2nd Floor, Soundarya Kamakshi<br />
               Magadi Main Road, Kamakshipalya<br />
               Bengaluru, Karnataka - 560079
+              <br />
+              <a className="footer-directions" href={cafeDirections}>Get directions on Google Maps</a>
             </p>
           </div>
 

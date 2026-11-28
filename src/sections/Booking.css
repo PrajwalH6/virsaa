@@ -90,9 +90,9 @@
   border-radius: 3px;
 }
 
-.booking-form input:focus,
-.booking-form textarea:focus,
-.booking-form select:focus {
+.booking-form input:focus-visible,
+.booking-form textarea:focus-visible,
+.booking-form select:focus-visible {
   outline: 2px solid #85b748;
   outline-offset: 1px;
 }

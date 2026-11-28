@@ -1,0 +1,18 @@
+.not-found {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.25rem;
+  padding: 2rem;
+  text-align: center;
+}
+.not-found h1 {
+  font-family: var(--font-heading);
+}
+.not-found a {
+  border-radius: 2rem;
+  background: var(--color-espresso);
+  color: var(--color-cream);
+  padding: .8rem 1.4rem;
+}

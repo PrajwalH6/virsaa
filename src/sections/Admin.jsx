@@ -1,6 +1,8 @@
 
+import { normalizeIndianMobile } from "../lib/reservations";
 import React, {
   useEffect,
+  useRef,
   useState,
   useCallback,
 } from "react";
@@ -98,49 +100,67 @@ function buildWhatsAppMessage(booking) {
   return "";
 }
 
-// ---------------------------------------
-// Open WhatsApp
-// ---------------------------------------
-
-function openWhatsApp(booking) {
-  if (
-    !["confirmed", "rejected", "cancelled"].includes(
-      booking.status
-    )
-  ) {
-    return;
-  }
-
-  // Normalize Indian phone number
-  let phone = String(booking.phone || "").replace(/\D/g, "");
-
-  if (phone.length === 10) {
-    phone = "91" + phone;
-  }
-
-  if (!/^91[6-9]\d{9}$/.test(phone)) {
-    alert("Please enter a valid Indian WhatsApp number.");
-    return;
-  }
+function WhatsAppActions({ booking }) {
+  const [copyStatus, setCopyStatus] = useState("");
+  const mobile = normalizeIndianMobile(booking.phone);
+  if (!["confirmed", "rejected", "cancelled"].includes(booking.status)) return null;
+  if (!mobile) return <span>Invalid mobile number</span>;
 
   const message = buildWhatsAppMessage(booking);
-  const encodedMessage = encodeURIComponent(message);
+  const target = `phone=91${mobile}&text=${encodeURIComponent(message)}`;
+  const web = `https://web.whatsapp.com/send?${target}`;
+  const mobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-  const isMobile =
-    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-  if (isMobile) {
-    // Attempts to open the installed WhatsApp app
-    window.location.href =
-      `whatsapp://send?phone=${phone}&text=${encodedMessage}`;
-  } else {
-    // Opens the customer's chat in WhatsApp Web
-    window.open(
-      `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
+  async function copyMessage() {
+    try {
+      await navigator.clipboard.writeText(message);
+      setCopyStatus("Message copied.");
+    } catch {
+      setCopyStatus("Select and copy the message below.");
+    }
   }
+
+  return (
+    <div className="admin-notification">
+      <a className="admin-whatsapp" href={mobileDevice ? `whatsapp://send?${target}` : web}
+        target={mobileDevice ? undefined : "_blank"} rel="noopener noreferrer">
+        Send WhatsApp
+      </a>
+      <details>
+        <summary>Message options</summary>
+        {mobileDevice && <a href={`https://wa.me/91${mobile}?text=${encodeURIComponent(message)}`}
+          target="_blank" rel="noopener noreferrer">Open WhatsApp in browser</a>}
+        <button type="button" onClick={copyMessage}>Copy message</button>
+        {copyStatus && <p role="status">{copyStatus}</p>}
+        {copyStatus.startsWith("Select") && (
+          <textarea readOnly aria-label="WhatsApp message" value={message}
+            onFocus={(event) => event.target.select()} />
+        )}
+      </details>
+    </div>
+  );
+}
+
+function ReservationStatus({ status }) {
+  return <span className={`admin-status admin-${status}`}>{status}</span>;
+}
+
+function ReservationActions({ booking, disabled, onUpdate }) {
+  const actions = booking.status === "pending"
+    ? [["confirmed", "Approve"], ["rejected", "Reject"]]
+    : booking.status === "confirmed" ? [["cancelled", "Cancel"]] : [];
+
+  return (
+    <div className="admin-actions">
+      {actions.map(([status, label]) => (
+        <button key={status} type="button" disabled={disabled}
+          onClick={() => onUpdate(booking.id, status)}>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 // ---------------------------------------
@@ -155,10 +175,19 @@ export default function Admin() {
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
-  const [staffRole, setStaffRole] = useState(null);
+  const [staffAccess, setStaffAccess] = useState(null);
   const [roleLoading, setRoleLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("reservations");
   const [rows, setRows] = useState([]);
+  const [refresh, setRefresh] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [search, setSearch] = useState("");
+  const [date, setDate] = useState("");
+  const [status, setStatus] = useState("");
+  const [counts, setCounts] = useState({ total: 0, pending: 0, confirmed: 0, filtered: 0 });
+  const bookingRequest = useRef(0);
+  const bookingInFlight = useRef(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
@@ -204,7 +233,7 @@ export default function Admin() {
     let active = true;
 
     async function checkStaffRole() {
-      setStaffRole(null);
+      setStaffAccess(null);
       setRows([]);
 
       if (!supabase || !session?.user?.id) {
@@ -226,17 +255,13 @@ export default function Admin() {
         if (active) {
           const role = data?.role;
 
-          setStaffRole(
-            ["admin", "super_admin"].includes(role)
-              ? role
-              : null
-          );
+          setStaffAccess({ userId: session.user.id, role });
         }
       } catch (error) {
         console.error(error);
 
         if (active) {
-          setStaffRole(null);
+          setStaffAccess(null);
           setMessage(
             "Unable to verify administrator permissions."
           );
@@ -253,57 +278,70 @@ export default function Admin() {
     };
   }, [session?.user?.id]);
 
+  const staffRole = staffAccess?.userId === session?.user?.id ? staffAccess?.role : null;
   const isAuthorized =
     staffRole === "admin" ||
     staffRole === "super_admin";
 
   const isSuperAdmin = staffRole === "super_admin";
 
-  const totalBookings = rows.length;
+  const pageCount = Math.max(1, Math.ceil(counts.filtered / pageSize));
 
-const pendingBookings = rows.filter(
-  (booking) => booking.status === "pending"
-).length;
+  const loadBookings = useCallback(async (background = false) => {
+    if (!supabase || !isAuthorized || (background && bookingInFlight.current)) return;
 
-const confirmedBookings = rows.filter(
-  (booking) => booking.status === "confirmed"
-).length;
-
-  // ---------------------------------------
-  // Load Bookings
-  // ---------------------------------------
-
-  const loadBookings = useCallback(async () => {
-    if (!supabase || !isAuthorized) return;
-
-    setLoading(true);
+    const request = ++bookingRequest.current;
+    bookingInFlight.current = true;
+    if (!background) setLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from("reservations")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(200);
+      const { data, error } = await supabase.rpc("cafe_reservation_page", {
+        p_page: page,
+        p_size: pageSize,
+        p_search: search.trim(),
+        p_date: date || null,
+        p_status: status || null,
+      });
 
+      if (request !== bookingRequest.current) return;
       if (error) throw error;
 
-      setRows(data || []);
+      const lastPage = Math.max(1, Math.ceil(data.filtered / pageSize));
+      setCounts(data);
+      if (page > lastPage) {
+        setRows([]);
+        setPage(lastPage);
+      } else {
+        setRows(data.rows);
+      }
     } catch (error) {
-      console.error(error);
-
-      setMessage(
-        "Unable to load bookings. Check staff permissions."
-      );
+      if (request === bookingRequest.current && (!background || error.code === "42501")) {
+        setRows([]);
+        setMessage("Unable to load bookings. Check staff permissions and try again.");
+      }
     } finally {
-      setLoading(false);
+      if (request === bookingRequest.current) {
+        bookingInFlight.current = false;
+        setLoading(false);
+      }
     }
-  }, [isAuthorized]);
+  }, [isAuthorized, page, pageSize, search, date, status]);
 
   useEffect(() => {
-    if (isAuthorized) {
-      loadBookings();
+    loadBookings();
+    return () => { bookingRequest.current += 1; };
+  }, [loadBookings, refresh]);
+
+  useEffect(() => {
+    if (!isAuthorized || activeTab !== "reservations" || updatingId) return;
+
+    function refreshVisibleDashboard() {
+      if (document.visibilityState === "visible") loadBookings(true);
     }
-  }, [isAuthorized, loadBookings]);
+
+    const timer = window.setInterval(refreshVisibleDashboard, 30_000);
+    return () => window.clearInterval(timer);
+  }, [activeTab, isAuthorized, loadBookings, updatingId]);
 
   // ---------------------------------------
   // Admin Login
@@ -392,8 +430,10 @@ const confirmedBookings = rows.filter(
       return;
     }
 
-    setStaffRole(null);
+    setStaffAccess(null);
     setRows([]);
+    setCounts({ total: 0, pending: 0, confirmed: 0, filtered: 0 });
+    setPage(1);
     setActiveTab("reservations");
   }
 
@@ -443,19 +483,14 @@ const confirmedBookings = rows.filter(
         );
       }
 
-      await loadBookings();
+      setRefresh((value) => value + 1);
 
       setMessage(
         `Booking ${newStatus}. Use Send WhatsApp to notify the customer.`
       );
     } catch (error) {
-      console.error(error);
-
-      setMessage(
-        error.message || "Unable to update booking."
-      );
-
-      await loadBookings();
+      setRefresh((value) => value + 1);
+      setMessage(error.message || "Unable to update booking.");
     } finally {
       setUpdatingId(null);
     }
@@ -658,19 +693,19 @@ const confirmedBookings = rows.filter(
 <div className="admin-stats-grid">
   <div className="admin-stat-card">
     <span>Total Reservations</span>
-    <strong>{totalBookings}</strong>
-    <small>Latest loaded bookings</small>
+    <strong>{counts.total}</strong>
+    <small>All reservation records</small>
   </div>
 
   <div className="admin-stat-card">
     <span>Pending Requests</span>
-    <strong>{pendingBookings}</strong>
+    <strong>{counts.pending}</strong>
     <small>Awaiting your approval</small>
   </div>
 
   <div className="admin-stat-card">
     <span>Confirmed Bookings</span>
-    <strong>{confirmedBookings}</strong>
+    <strong>{counts.confirmed}</strong>
     <small>Ready to welcome</small>
   </div>
 </div>
@@ -714,7 +749,7 @@ const confirmedBookings = rows.filter(
 
                 <button
                   type="button"
-                  onClick={loadBookings}
+                  onClick={() => loadBookings()}
                   disabled={loading}
                 >
                   {loading
@@ -723,7 +758,45 @@ const confirmedBookings = rows.filter(
                 </button>
               </div>
 
-              <div className="admin-table-wrap">
+              <div className="admin-filters">
+                <label>
+                  Search bookings
+                  <input type="search" value={search} maxLength={100}
+                    placeholder="Name, mobile or reference"
+                    onChange={(event) => { setSearch(event.target.value); setPage(1); }}
+                  />
+                </label>
+                <label>
+                  Booking date
+                  <input type="date" value={date}
+                    onChange={(event) => { setDate(event.target.value); setPage(1); }}
+                  />
+                </label>
+                <label>
+                  Status
+                  <select value={status}
+                    onChange={(event) => { setStatus(event.target.value); setPage(1); }}
+                  >
+                    <option value="">All statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </label>
+                <label>
+                  Per page
+                  <select value={pageSize}
+                    onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }}
+                  >
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="admin-table-wrap" aria-busy={loading}>
                 <table>
                   <thead>
                     <tr>
@@ -759,102 +832,47 @@ const confirmedBookings = rows.filter(
                         <td>{booking.guests}</td>
                         <td>{booking.notes || "—"}</td>
 
+                        <td><ReservationStatus status={booking.status} /></td>
                         <td>
-                          <span
-                            className={`admin-status admin-${booking.status}`}
-                          >
-                            {booking.status}
-                          </span>
+                          <ReservationActions booking={booking} disabled={loading || Boolean(updatingId)}
+                            onUpdate={updateBooking} />
                         </td>
-
-                        <td className="admin-actions">
-                          {booking.status ===
-                            "pending" && (
-                            <>
-                              <button
-                                type="button"
-                                disabled={Boolean(
-                                  updatingId
-                                )}
-                                onClick={() =>
-                                  updateBooking(
-                                    booking.id,
-                                    "confirmed"
-                                  )
-                                }
-                              >
-                                Approve
-                              </button>
-
-                              <button
-                                type="button"
-                                disabled={Boolean(
-                                  updatingId
-                                )}
-                                onClick={() =>
-                                  updateBooking(
-                                    booking.id,
-                                    "rejected"
-                                  )
-                                }
-                              >
-                                Reject
-                              </button>
-                            </>
-                          )}
-
-                          {booking.status ===
-                            "confirmed" && (
-                            <button
-                              type="button"
-                              disabled={Boolean(
-                                updatingId
-                              )}
-                              onClick={() =>
-                                updateBooking(
-                                  booking.id,
-                                  "cancelled"
-                                )
-                              }
-                            >
-                              Cancel
-                            </button>
-                          )}
-                        </td>
-
-                        <td>
-                          {[
-                            "confirmed",
-                            "rejected",
-                            "cancelled",
-                          ].includes(
-                            booking.status
-                          ) && (
-                            <button
-                              type="button"
-                              className="admin-whatsapp"
-                              onClick={() =>
-                                openWhatsApp(
-                                  booking
-                                )
-                              }
-                            >
-                              Send WhatsApp
-                            </button>
-                          )}
-                        </td>
+                        <td><WhatsAppActions key={booking.status} booking={booking} /></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
-                {!rows.length &&
-                  !loading && (
-                    <p>
-                      No booking requests found.
-                    </p>
-                  )}
               </div>
+              <div className="admin-reservation-cards" aria-busy={loading}>
+                {rows.map((booking) => (
+                  <article className="admin-reservation-card" key={booking.id}>
+                    <header>
+                      <h3>{booking.customer_name}</h3>
+                      <ReservationStatus status={booking.status} />
+                    </header>
+                    <dl>
+                      <div><dt>Phone</dt><dd>{booking.phone}</dd></div>
+                      <div><dt>Date</dt><dd>{booking.booking_date}</dd></div>
+                      <div><dt>Time</dt><dd>{booking.booking_time?.slice(0, 5)}</dd></div>
+                      <div><dt>Guests</dt><dd>{booking.guests}</dd></div>
+                      <div className="admin-card-full-width"><dt>Special requests</dt><dd>{booking.notes || "—"}</dd></div>
+                      <div className="admin-card-full-width"><dt>Booking reference</dt><dd>{booking.id}</dd></div>
+                    </dl>
+                    <ReservationActions booking={booking} disabled={loading || Boolean(updatingId)}
+                      onUpdate={updateBooking} />
+                    <WhatsAppActions key={booking.status} booking={booking} />
+                  </article>
+                ))}
+              </div>
+              {!rows.length && !loading && <p>No booking requests found.</p>}
+              <nav className="admin-pagination" aria-label="Reservation pages">
+                <button type="button" disabled={loading || page <= 1}
+                  onClick={() => setPage(page - 1)}>Previous</button>
+                <span role="status">Page {page} of {pageCount} · {counts.filtered} matching records</span>
+                <button type="button" disabled={loading || page >= pageCount}
+                  onClick={() => setPage(page + 1)}>Next</button>
+              </nav>
             </>
           )}
 

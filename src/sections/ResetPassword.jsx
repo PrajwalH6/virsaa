@@ -1,159 +1,60 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { supabase, configured } from "../lib/supabase";
+import { verifyRecovery } from "../lib/recovery";
 import "./Admin.css";
+
+const recoveryController = new AbortController();
+const isRecoveryPage = window.location.pathname.replace(/\/$/, "") === "/admin/reset-password";
+const recoveryVerification = supabase && isRecoveryPage
+  ? verifyRecovery(supabase.auth, window.location.href, { signal: recoveryController.signal })
+    .then((session) => ({ session }), (error) => ({ error }))
+  : null;
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] =
     useState("");
 
-  const [ready, setReady] = useState(false);
+  const [recoveryUser, setRecoveryUser] = useState(null);
+  const effectVersion = useRef(0);
   const [checking, setChecking] = useState(true);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (!supabase) {
+    if (!recoveryVerification) {
       setChecking(false);
-      setMessage("Supabase is not configured.");
       return;
     }
 
+    const version = ++effectVersion.current;
     let active = true;
-    let recoveryVerified = false;
-
-    const params = new URLSearchParams(
-      window.location.search
-    );
-
-    const hashParams = new URLSearchParams(
-      window.location.hash.replace(/^#/, "")
-    );
-
-    const code = params.get("code");
-    const tokenHash = params.get("token_hash");
-    const type =
-      params.get("type") ||
-      hashParams.get("type");
-
-    const authError =
-      params.get("error_description") ||
-      hashParams.get("error_description");
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (event) => {
-        if (!active) return;
-
-        if (event === "PASSWORD_RECOVERY") {
-          recoveryVerified = true;
-          setReady(true);
-          setChecking(false);
-          setMessage("");
-        }
+    recoveryVerification.then(({ session, error }) => {
+      if (!active) return;
+      if (error) {
+        setMessage(error.message);
+      } else {
+        setRecoveryUser(session.user.id);
+        window.history.replaceState({}, "", "/admin/reset-password");
       }
-    );
-
-    async function initializeRecovery() {
-      if (authError) {
-        if (active) {
-          setMessage(
-            decodeURIComponent(authError)
-          );
-          setChecking(false);
-        }
-        return;
-      }
-
-      try {
-        if (tokenHash && type === "recovery") {
-          const { error } =
-            await supabase.auth.verifyOtp({
-              token_hash: tokenHash,
-              type: "recovery",
-            });
-
-          if (error) throw error;
-
-          recoveryVerified = true;
-        } else if (code) {
-          const { error } =
-            await supabase.auth.exchangeCodeForSession(
-              code
-            );
-
-          if (error) throw error;
-
-          // The code exchange alone does not prove
-          // that this was a recovery link.
-          // Supabase's PASSWORD_RECOVERY event
-          // is required for the PKCE flow.
-        } else if (
-          type === "recovery" &&
-          hashParams.has("access_token")
-        ) {
-          // Supabase automatically processes
-          // the recovery URL and emits
-          // PASSWORD_RECOVERY.
-        } else {
-          if (active) {
-            setMessage(
-              "Open the password recovery link sent to your email."
-            );
-            setChecking(false);
-          }
-          return;
-        }
-
-        if (!active) return;
-
-        if (recoveryVerified) {
-          setReady(true);
-          setChecking(false);
-
-          window.history.replaceState(
-            {},
-            "",
-            "/admin/reset-password"
-          );
-        } else {
-          // Allow the auth listener to receive
-          // the PASSWORD_RECOVERY event.
-          // If it is not emitted, do not grant
-          // recovery access merely from a session.
-          setChecking(false);
-          setMessage(
-            "Recovery verification was not completed. Please request a new password reset link."
-          );
-        }
-      } catch (error) {
-        console.error(error);
-
-        if (active) {
-          setReady(false);
-          setChecking(false);
-          setMessage(
-            "The recovery link is invalid or expired. Please request a new one."
-          );
-        }
-      }
-    }
-
-    initializeRecovery();
+      setChecking(false);
+    });
 
     return () => {
       active = false;
-      subscription.unsubscribe();
+      // React can immediately replay the effect in development.
+      queueMicrotask(() => {
+        if (effectVersion.current === version) recoveryController.abort();
+      });
     };
   }, []);
 
   async function handleReset(e) {
     e.preventDefault();
 
-    if (!ready || !supabase) return;
+    if (!recoveryUser || !supabase) return;
 
     setMessage("");
 
@@ -172,6 +73,13 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user.id !== recoveryUser) {
+        setRecoveryUser(null);
+        setMessage("Recovery session lost. Please request another link.");
+        return;
+      }
+
       const { error } =
         await supabase.auth.updateUser({
           password,
@@ -180,7 +88,7 @@ export default function ResetPassword() {
       if (error) throw error;
 
       setSuccess(true);
-      setReady(false);
+      setRecoveryUser(null);
       setPassword("");
       setConfirmPassword("");
 
@@ -215,7 +123,7 @@ export default function ResetPassword() {
           <p>Supabase is not configured.</p>
         ) : checking ? (
           <p>Verifying recovery link...</p>
-        ) : ready && !success ? (
+        ) : recoveryUser && !success ? (
           <form onSubmit={handleReset}>
             <label>
               New Password

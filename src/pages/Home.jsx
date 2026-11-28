@@ -2,6 +2,7 @@
 import React from "react";
 
 import "../styles/global.css";
+import "../styles/not-found.css";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -39,6 +40,16 @@ function Home() {
   // Admin dashboard
   if (path === "/admin") {
     return <Admin />;
+  }
+
+  if (path !== "/") {
+    return (
+      <main className="not-found">
+        <p>VriSaa Café</p>
+        <h1>Page not found</h1>
+        <a href="/">Return to Homepage</a>
+      </main>
+    );
   }
 
   // Public café website

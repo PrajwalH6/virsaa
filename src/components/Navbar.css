@@ -295,6 +295,7 @@
   }
 
   .nav-links.active {
+    transition-property: transform, opacity;
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
@@ -381,10 +382,6 @@
 
   .nav-links.active .menu-item:nth-child(4) {
     transition-delay: 0.26s;
-  }
-
-  .nav-links.active .menu-item:nth-child(5) {
-    transition-delay: 0.32s;
   }
 
   /* Number */

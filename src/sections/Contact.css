@@ -298,7 +298,6 @@
   font-family: "DM Sans", sans-serif;
   font-size: 14px;
   line-height: 1.5;
-  outline: none;
   transition: 0.2s ease;
 }
 
@@ -316,8 +315,8 @@
   color: #a1a69d;
 }
 
-.contact-field input:focus,
-.contact-field textarea:focus {
+.contact-field input:focus-visible,
+.contact-field textarea:focus-visible {
   border-color: #64856c;
   background: white;
   box-shadow: 0 0 0 3px rgba(53, 98, 65, 0.09);

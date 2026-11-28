@@ -1,6 +1,7 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { supabase, configured } from "../lib/supabase";
+import { trackingPhone } from "../lib/reservations";
 import "./TrackBooking.css";
 
 const uuidPattern =
@@ -22,12 +23,30 @@ const statusMessages = {
 
 export default function TrackBooking() {
   const [reference, setReference] = useState("");
+  const [phone, setPhone] = useState("");
   const [booking, setBooking] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const activeRequest = useRef(null);
+
+  useEffect(() => () => {
+    activeRequest.current?.abort();
+    activeRequest.current = null;
+  }, []);
+
+  function editLookup(setValue, value) {
+    activeRequest.current?.abort();
+    activeRequest.current = null;
+    setValue(value);
+    setBooking(null);
+    setError("");
+    setLoading(false);
+  }
+
   async function handleTrack(e) {
     e.preventDefault();
+    if (activeRequest.current) return;
 
     setError("");
     setBooking(null);
@@ -44,31 +63,45 @@ export default function TrackBooking() {
       return;
     }
 
+    const mobile = trackingPhone(phone);
+    if (!mobile) {
+      setError("Enter the mobile number used to book.");
+      return;
+    }
+
+    const request = new AbortController();
+    activeRequest.current = request;
     setLoading(true);
 
     try {
       const { data, error: queryError } =
         await supabase.rpc("track_reservation", {
           p_booking_id: id,
-        });
+          p_phone: mobile,
+        }).abortSignal(request.signal);
+
+      if (activeRequest.current !== request) return;
 
       if (queryError) throw queryError;
 
       if (!data || data.length === 0) {
         setError(
-          "No booking was found for this reference."
+          "No booking matched that reference and mobile number."
         );
         return;
       }
 
       setBooking(data[0]);
     } catch (err) {
-      console.error(err);
-      setError(
-        "Unable to check booking status. Please try again."
-      );
+      if (activeRequest.current !== request) return;
+      setError(err.code === "PT429"
+        ? "Too many status checks. Please wait a few minutes and try again."
+        : "Unable to check booking status. Please try again.");
     } finally {
-      setLoading(false);
+      if (activeRequest.current === request) {
+        activeRequest.current = null;
+        setLoading(false);
+      }
     }
   }
 
@@ -86,7 +119,7 @@ export default function TrackBooking() {
 
         <p className="track-description">
           Enter the private booking reference you received
-          when submitting your table request.
+          when submitting your table request, along with the mobile number you entered.
         </p>
 
         <form onSubmit={handleTrack}>
@@ -98,10 +131,21 @@ export default function TrackBooking() {
             id="booking-reference"
             type="text"
             value={reference}
-            onChange={(e) => setReference(e.target.value)}
+            onChange={(e) => editLookup(setReference, e.target.value)}
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
             maxLength={36}
             autoComplete="off"
+            required
+          />
+
+          <label htmlFor="tracking-phone">Booking Mobile Number</label>
+          <input
+            id="tracking-phone"
+            type="tel"
+            value={phone}
+            onChange={(e) => editLookup(setPhone, e.target.value)}
+            autoComplete="tel"
+            placeholder="+91 or 10-digit mobile number"
             required
           />
 

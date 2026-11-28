@@ -1,44 +1,53 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./Navbar.css";
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
+  const toggle = useRef(null);
+  const navigation = useRef(null);
   const closeMenu = () => setMenuOpen(false);
 
-  // Handle navbar scroll and Escape key
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+    const desktop = window.matchMedia("(min-width: 701px)");
+    const handleResize = () => {
+      if (desktop.matches) setMenuOpen(false);
     };
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
-        closeMenu();
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, {
-      passive: true,
-    });
-
-    window.addEventListener("keydown", handleKeyDown);
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    desktop.addEventListener("change", handleResize);
     handleScroll();
-
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("keydown", handleKeyDown);
+      desktop.removeEventListener("change", handleResize);
     };
   }, []);
 
-  // Prevent background scrolling when menu is open
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
+    if (!menuOpen) return;
 
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    navigation.current.querySelector("a")?.focus();
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        toggle.current?.focus();
+      }
+      if (event.key !== "Tab") return;
+
+      const controls = [...navigation.current.querySelectorAll("a"), toggle.current];
+      const index = controls.indexOf(document.activeElement);
+      const next = (index + (event.shiftKey ? -1 : 1) + controls.length) % controls.length;
+      event.preventDefault();
+      controls[next]?.focus();
+    };
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [menuOpen]);
 
@@ -57,7 +66,7 @@ function Navbar() {
           id="main-navigation"
           className={`nav-links ${menuOpen ? "active" : ""}`}
           aria-label="Main navigation"
-          aria-hidden={!menuOpen && window.innerWidth <= 700}
+          ref={navigation}
         >
 
           {/* Mobile heading */}
@@ -90,14 +99,8 @@ function Navbar() {
               <span className="menu-arrow">↗</span>
             </a>
 
-            <a href="#experience" onClick={closeMenu} className="menu-item">
-              <span className="menu-number">04</span>
-              <span className="menu-item-name">Experience</span>
-              <span className="menu-arrow">↗</span>
-            </a>
-
             <a href="#contact" onClick={closeMenu} className="menu-item">
-              <span className="menu-number">05</span>
+              <span className="menu-number">04</span>
               <span className="menu-item-name">Contact</span>
               <span className="menu-arrow">↗</span>
             </a>
@@ -126,6 +129,7 @@ function Navbar() {
           aria-label={menuOpen ? "Close navigation" : "Open navigation"}
           aria-expanded={menuOpen}
           aria-controls="main-navigation"
+          ref={toggle}
         >
           <span></span>
           <span></span>

@@ -1,4 +1,5 @@
 
+import { cafeDirections } from "../lib/cafeLocation";
 import React, { useState } from "react";
 import "./Contact.css";
 
@@ -119,6 +120,7 @@ function Contact() {
                   <p>C-204, 2nd Floor, Soundarya Kamakshi</p>
                   <p>Magadi Main Road, Kamakshipalya</p>
                   <p>Bengaluru, Karnataka - 560079</p>
+                  <a className="contact-directions" href={cafeDirections}>Get directions on Google Maps</a>
                 </div>
               </div>
 

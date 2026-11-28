@@ -396,11 +396,10 @@
   border-radius: 10px;
   color: var(--admin-text);
   font-size: 15px;
-  outline: none;
   transition: 0.2s ease;
 }
 
-.admin-login input:focus {
+.admin-login input:focus-visible {
   border-color: var(--admin-green-light);
   box-shadow: 0 0 0 3px rgba(40, 86, 64, 0.1);
 }
@@ -688,5 +687,124 @@
 
   .admin-stat-card {
     padding: 19px;
+  }
+}
+.admin-filters,
+.admin-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+  margin-block: 1rem;
+}
+
+.admin-filters label {
+  display: grid;
+  gap: .3rem;
+}
+
+.admin-filters input,
+.admin-filters select,
+.admin-pagination button {
+  border: 1px solid var(--border-color);
+  border-radius: .5rem;
+  background: var(--color-cream);
+  color: var(--color-espresso);
+  padding: .55rem .75rem;
+}
+
+.admin-pagination {
+  align-items: center;
+}
+
+.admin-pagination button:disabled {
+  opacity: .55;
+}
+.admin-reservation-cards {
+  display: none;
+}
+
+.admin-notification {
+  display: grid;
+  justify-items: start;
+  gap: .35rem;
+}
+
+.admin-notification > a,
+.admin-notification summary {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.admin-notification details[open] > :not(summary) {
+  display: block;
+  margin-top: .4rem;
+}
+
+.admin-notification details a {
+  text-decoration: underline;
+}
+
+.admin-notification details textarea {
+  width: 100%;
+  min-height: 6rem;
+  padding: .45rem;
+}
+
+@media (max-width: 1024px) {
+  .admin-table-wrap {
+    display: none;
+  }
+
+  .admin-reservation-cards {
+    display: grid;
+    gap: .8rem;
+    padding: .3rem;
+  }
+
+  .admin-reservation-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--color-white);
+    padding: .85rem;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-reservation-card header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .55rem;
+    margin-bottom: .65rem;
+  }
+
+  .admin-reservation-card h3 {
+    font-family: var(--font-heading);
+    color: var(--color-avocado);
+  }
+
+  .admin-reservation-card dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .55rem;
+    margin-bottom: .65rem;
+  }
+
+  .admin-reservation-card dt {
+    color: var(--text-secondary);
+    font-size: .83rem;
+  }
+
+  .admin-card-full-width {
+    grid-column: 1 / -1;
+  }
+
+  .admin-reservation-card :is(.admin-actions button, .admin-notification a, .admin-notification button) {
+    min-height: 44px;
+  }
+
+  .admin-reservation-card .admin-notification a {
+    display: inline-flex;
+    align-items: center;
   }
 }

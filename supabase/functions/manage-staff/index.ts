@@ -3,9 +3,10 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-const siteUrl = Deno.env.get("SITE_URL")!;
+const secretKeys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}");
+const serviceKey = secretKeys.default ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+if (!serviceKey) throw new Error("Supabase server key is missing.");
+const siteUrl = new URL(Deno.env.get("SITE_URL")!).origin;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": siteUrl,
@@ -41,7 +42,7 @@ serve(async (req) => {
   try {
     const token = req.headers
       .get("Authorization")
-      ?.replace(/^Bearer\s+/i, "");
+      ?.match(/^Bearer\s+(\S+)$/i)?.[1];
 
     if (!token) {
       return respond({ error: "Authentication required" }, 401);
@@ -69,7 +70,12 @@ serve(async (req) => {
       return respond({ error: "Super Admin access required" }, 403);
     }
 
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return respond({ error: "Invalid request body" }, 400);
+    }
     const action = body?.action;
 
     if (action === "invite") {
@@ -90,41 +96,59 @@ serve(async (req) => {
         return respond({ error: "Invalid role" }, 400);
       }
 
-      const { data, error } =
-        await service.auth.admin.inviteUserByEmail(email, {
+      const { error: reserveError } = await service
+        .from("cafe_staff_invitations")
+        .upsert({ email, role }, { onConflict: "email", ignoreDuplicates: true });
+      if (reserveError) throw reserveError;
+
+      const { data: invitation, error: readError } = await service
+        .from("cafe_staff_invitations")
+        .select("role, marker")
+        .eq("email", email)
+        .single();
+      if (readError) throw readError;
+      if (invitation.role !== role) {
+        return respond({ error: "An invitation already exists with a different role." }, 409);
+      }
+
+      async function finishInvitation() {
+        const { data, error } = await service.rpc("cafe_finish_staff_invite", {
+          p_caller: user!.id,
+          p_email: email,
+        });
+        if (error) throw error;
+        return data;
+      }
+
+      let state = await finishInvitation();
+      if (state === "pending") {
+        const { data: claim, error: claimError } = await service.rpc("cafe_claim_staff_invite", {
+          p_caller: user.id,
+          p_email: email,
+        });
+        if (claimError) throw claimError;
+        if (claim === "forbidden") return respond({ error: "Super Admin access required" }, 403);
+        if (claim !== "claimed") {
+          return respond({ error: "Invitation is being processed. Retry in one minute with the same role." }, 409);
+        }
+
+        const { error: inviteError } = await service.auth.admin.inviteUserByEmail(email, {
           redirectTo: `${siteUrl}/admin/setup`,
+          data: { cafe_invitation_marker: invitation.marker },
         });
-
-      if (error || !data.user) {
-        return respond(
-          { error: error?.message || "Invitation failed" },
-          400
-        );
+        state = await finishInvitation();
+        if (inviteError && state === "pending") {
+          console.error("Staff invitation provider error", { code: inviteError.code, status: inviteError.status });
+          return respond({ error: "Invitation delivery could not be verified. Retry in one minute with the same role." }, 502);
+        }
       }
 
-      // Authorize the invited account, but do not replace
-      // an existing staff member's role.
-      const { error: insertError } = await service
-        .from("admin_users")
-        .insert({
-          user_id: data.user.id,
-          role,
-        });
-
-      if (insertError) {
-        // Avoid leaving a newly invited, unauthorized account.
-        // Do not delete an existing account automatically.
-        return respond(
-          {
-            error:
-              "Invitation was generated but staff authorization failed. " +
-              "Check whether this account is already registered.",
-          },
-          409
-        );
+      if (state === "complete") return respond({ success: true });
+      if (state === "forbidden") return respond({ error: "Super Admin access required" }, 403);
+      if (state === "existing_account" || state === "removed") {
+        return respond({ error: "This email already has an account. Ask the owner to review its existing access." }, 409);
       }
-
-      return respond({ success: true });
+      return respond({ error: "Staff access could not be verified. Retry with the same email and role." }, 409);
     }
 
     if (action === "list") {
@@ -137,8 +161,9 @@ serve(async (req) => {
       const staff = [];
 
       for (const admin of admins || []) {
-        const { data } =
+        const { data, error: lookupError } =
           await service.auth.admin.getUserById(admin.user_id);
+        if (lookupError) throw lookupError;
 
         staff.push({
           user_id: admin.user_id,
@@ -167,51 +192,21 @@ serve(async (req) => {
         );
       }
 
-      const { data: target, error: targetError } =
-        await service
-          .from("admin_users")
-          .select("role")
-          .eq("user_id", targetId)
-          .single();
-
-      if (targetError || !target) {
-        return respond({ error: "Staff member not found" }, 404);
-      }
-
-      if (target.role === "super_admin") {
-        const { count, error: countError } = await service
-          .from("admin_users")
-          .select("*", {
-            count: "exact",
-            head: true,
-          })
-          .eq("role", "super_admin");
-
-        if (countError) throw countError;
-
-        if ((count || 0) <= 1) {
-          return respond(
-            { error: "Cannot remove the last Super Admin" },
-            400
-          );
-        }
-      }
-
-      const { error } = await service
-        .from("admin_users")
-        .delete()
-        .eq("user_id", targetId);
-
+      const { data: state, error } = await service.rpc("cafe_remove_staff", {
+        p_caller: user.id,
+        p_target: targetId,
+      });
       if (error) throw error;
-
-      // Removes dashboard authorization.
-      // The Auth account itself remains for audit/recovery.
+      if (state === "forbidden") return respond({ error: "Super Admin access required" }, 403);
+      if (state === "missing") return respond({ error: "Staff member not found" }, 404);
+      if (state !== "removed") return respond({ error: "Staff access could not be removed" }, 409);
       return respond({ success: true });
     }
 
     return respond({ error: "Unknown action" }, 400);
   } catch (error) {
-    console.error(error);
+    const failure = error as { code?: string; status?: number };
+    console.error("Staff management failed", { code: failure?.code, status: failure?.status });
     return respond({ error: "Server error" }, 500);
   }
 });

@@ -1,6 +1,7 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { supabase, configured } from "../lib/supabase";
+import { cafeDateTime, isFutureBooking, normalizeIndianMobile, reservationAttempt } from "../lib/reservations";
 import "./Booking.css";
 
 const initialForm = {
@@ -12,21 +13,22 @@ const initialForm = {
   notes: "",
 };
 
-function today() {
-  const date = new Date();
-
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
-}
-
 export default function Booking() {
   const [form, setForm] = useState(initialForm);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [reference, setReference] = useState("");
+
+  const submitting = useRef(false);
+  const [clock, setClock] = useState(() => cafeDateTime(Date.now() + 60_000));
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const next = cafeDateTime(Date.now() + 60_000);
+      setClock((current) => current.date === next.date && current.time === next.time ? current : next);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -39,6 +41,7 @@ export default function Booking() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (submitting.current) return;
 
     setMessage("");
     setReference("");
@@ -48,32 +51,43 @@ export default function Booking() {
       return;
     }
 
-    if (!/^[0-9]{10}$/.test(form.phone.trim())) {
-      setMessage("Enter a valid 10-digit mobile number.");
+    const phone = normalizeIndianMobile(form.phone);
+    if (!phone) {
+      setMessage("Enter a valid Indian mobile number, with or without +91.");
       return;
     }
 
-    if (form.booking_date < today()) {
-      setMessage("Please choose a valid future date.");
+    const name = form.customer_name.trim();
+    if (!name) {
+      setMessage("Enter your full name.");
       return;
     }
 
-    const bookingId = crypto.randomUUID();
+    const details = {
+      p_name: name,
+      p_phone: phone,
+      p_date: form.booking_date,
+      p_time: form.booking_time,
+      p_guests: Number(form.guests),
+      p_notes: form.notes.trim(),
+    };
 
+    submitting.current = true;
     setBusy(true);
 
     try {
-      const { error } = await supabase
-        .from("reservations")
-        .insert({
-          id: bookingId,
-          customer_name: form.customer_name.trim(),
-          phone: form.phone.trim(),
-          booking_date: form.booking_date,
-          booking_time: form.booking_time,
-          guests: Number(form.guests),
-          notes: form.notes.trim(),
-        });
+      // Reject new past requests before saving a retry key. The RPC checks again.
+      const future = isFutureBooking(details.p_date, details.p_time);
+      const { key, retry } = await reservationAttempt(details, sessionStorage, future);
+      if (!future && !retry) {
+        setMessage("Choose a future date and time in India Standard Time.");
+        return;
+      }
+
+      const { data: bookingId, error } = await supabase.rpc("submit_reservation", {
+        ...details,
+        p_key: key,
+      });
 
       if (error) throw error;
 
@@ -85,12 +99,13 @@ export default function Booking() {
         "It is pending approval from VriSaa Café."
       );
     } catch (error) {
-      console.error(error);
-
-      setMessage(
-        "Unable to submit your request. Please try again."
-      );
+      if (error.code === "PT429") {
+        setMessage("Too many booking attempts. Please wait a few minutes and retry with the same details.");
+      } else {
+        setMessage(error.code === "22023" ? error.message : "Unable to submit your request. Please try again with the same details.");
+      }
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
@@ -164,9 +179,8 @@ export default function Booking() {
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
-                placeholder="10-digit mobile number"
-                pattern="[0-9]{10}"
-                inputMode="numeric"
+                placeholder="+91 or 10-digit mobile number"
+                autoComplete="tel"
                 required
               />
             </label>
@@ -177,18 +191,30 @@ export default function Booking() {
                 type="date"
                 name="booking_date"
                 value={form.booking_date}
-                min={today()}
+                min={cafeDateTime().date}
+                onInvalid={(event) => {
+                  if (event.target.validity.rangeUnderflow) {
+                    setMessage("Choose today or a future date in India Standard Time.");
+                  }
+                }}
                 onChange={handleChange}
                 required
               />
             </label>
 
             <label>
-              Preferred Time
+              Preferred Time (IST)
               <input
                 type="time"
                 name="booking_time"
                 value={form.booking_time}
+                min={form.booking_date === clock.date ? clock.time : undefined}
+                max={form.booking_date && form.booking_date < clock.date ? "00:00" : undefined}
+                onInvalid={(event) => {
+                  if (event.target.validity.rangeUnderflow || event.target.validity.rangeOverflow) {
+                    setMessage("Choose a future time in India Standard Time.");
+                  }
+                }}
                 onChange={handleChange}
                 required
               />
@@ -252,7 +278,7 @@ export default function Booking() {
 
               <p>
                 Save this reference privately.
-                You will need it to track your booking.
+                Use it with your booking mobile number to track your request.
                 This is not a confirmed reservation.
               </p>
 
